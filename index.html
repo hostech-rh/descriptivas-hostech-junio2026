@@ -1379,6 +1379,125 @@ function populateCatalogoSelect() {
   });
 }
 
+
+// ── CARGA DESDE SHEETS (ida y vuelta) ──
+async function cargarDesdeSheets(nombre, area) {
+  try {
+    const url = APPS_SCRIPT_URL + '?puesto=' + encodeURIComponent(nombre) + '&area=' + encodeURIComponent(area||'');
+    const res = await fetch(url);
+    const json = await res.json();
+    if (json.status === 'ok' && json.data) return json.data;
+    return null;
+  } catch(e) {
+    console.warn('No se pudo cargar desde Sheets:', e);
+    return null;
+  }
+}
+
+function aplicarDatosSheets(d) {
+  // Mapeo columnas Sheets → campos del formulario
+  sv('f-nombre',   d['Puesto']  || '');
+  sv('f-area',     d['Área']    || '');
+  sv('f-subarea',  d['Sub Área']|| '');
+  sv('f-jefe',     d['Reporta a']|| '');
+  sv('f-clave',    d['Clave']   || '');
+  sv('f-sede',     d['Sede']    || '');
+  sv('f-horas',    d['Horas/sem']|| '');
+  ss('f-nivel',    d['Nivel']   || '');
+  ss('f-eval-desempeno', d['Evaluación desempeño']|| '');
+
+  // Jornada y modalidad
+  const jornada = d['Jornada'] || '';
+  setChk('f-jc',   'chk-jornada-completa', jornada.includes('Completa'));
+  setChk('f-jm',   'chk-jornada-mixta',    jornada.includes('Mixta'));
+  setChk('f-jmed', 'chk-jornada-media',    jornada.includes('Media'));
+  const modalidad = d['Modalidad'] || '';
+  setChk('f-mp', 'chk-mod-presencial', modalidad.includes('Presencial'));
+  setChk('f-mh', 'chk-mod-hibrido',    modalidad.includes('Híbrido'));
+  setChk('f-mr', 'chk-mod-remoto',     modalidad.includes('Remoto'));
+
+  // Elaborado/revisado/aprobado
+  sv('f-autor',    d['Elaborado por'] || '');
+  sv('f-revisor',  d['Revisado por']  || '');
+  sv('f-aprobador',d['Aprobado por']  || '');
+
+  // Misión, visión, objetivo
+  sv('f-mision',   d['Misión']   || '');
+  sv('f-vision',   d['Visión']   || '');
+  sv('f-objetivo', d['Objetivo'] || '');
+
+  // Escolaridad y experiencia
+  ss('f-escolaridad', d['Escolaridad'] || '');
+  sv('f-conocimiento', d['Área conocimiento'] || '');
+  sv('f-hab-inter',    d['Habilidades interpersonales'] || '');
+
+  // Funciones
+  sv('f-func-sust',  d['Funciones clave']     || '');
+  sv('f-func-apoyo', d['Funciones apoyo']      || '');
+  sv('f-func-event', d['Funciones eventuales'] || '');
+  sv('f-indicadores',d['Indicadores']          || '');
+
+  // Relaciones
+  sv('f-rel-int',         d['Interactúa con']        || '');
+  sv('f-supervisados',    d['Supervisa a']            || '');
+  sv('f-reemplazo',       d['Reemplazo']              || '');
+  sv('f-colab-directos',  d['Colaboradores directos'] || '');
+  sv('f-colab-indirectos',d['Colaboradores indirectos']|| '');
+
+  // Financiera
+  sv('f-resp-ventas',      d['Resp. ventas']       || '');
+  sv('f-monto-ventas',     d['Monto ventas']        || '');
+  sv('f-resp-presupuesto', d['Resp. presupuesto']   || '');
+  sv('f-monto-presupuesto',d['Monto presupuesto']   || '');
+  sv('f-manejo-efectivo',  d['Efectivo/valores']    || '');
+
+  // Condiciones
+  ss('f-esf-mental',  d['Esfuerzo mental'] || '');
+  ss('f-esf-fisico',  d['Esfuerzo físico'] || '');
+  ss('f-ambiente',    d['Ambiente']        || '');
+  ss('f-riesgo',      d['Riesgo']          || '');
+  ss('f-impacto',     d['Impacto errores'] || '');
+  ss('f-disponibilidad', d['Disponibilidad viajes'] || '');
+  ss('f-licencia',    d['Licencia']        || '');
+  ss('f-auto',        d['Automóvil']       || '');
+  ss('f-disp-horario',d['Disponibilidad horario'] || '');
+  sv('f-caracteristicas', d['Características'] || '');
+
+  // Recursos y confidencial
+  const rec = (d['Recursos materiales']||'').split(',').map(x=>x.trim()).filter(Boolean);
+  const conf = (d['Info. confidencial']||'').split(',').map(x=>x.trim()).filter(Boolean);
+  setRecursos(rec);
+  setConfidencial(conf);
+
+  // Competencias cardinales
+  buildCardinalTable('comp-cardinal-body');
+  const cardCols = [
+    'Cardinal: Orientación resultados','Cardinal: Comunicación efectiva',
+    'Cardinal: Adaptabilidad','Cardinal: Mentalidad crecimiento','Cardinal: Trabajo colaborativo'
+  ];
+  cardCols.forEach((col, i) => {
+    const nivel = d[col] || '';
+    if (nivel) {
+      document.querySelectorAll('#cardinal-' + i + ' .nv').forEach(b => {
+        if (b.textContent === nivel) b.classList.add('sel');
+      });
+    }
+  });
+
+  // Competencias técnicas y relacionales desde texto
+  const parsearComps = (texto) => {
+    if (!texto) return [];
+    return texto.split('|').map(t => t.trim()).filter(Boolean).map(t => {
+      const partes = t.split(':');
+      return { nombre: (partes[0]||'').trim(), nivel: (partes[1]||'').trim() };
+    });
+  };
+  document.getElementById('comp-tec-body').innerHTML = '';
+  parsearComps(d['Comp. técnicas']).forEach(c => addCompWithData('tec', c.nombre, c.nivel));
+  document.getElementById('comp-rel-body').innerHTML = '';
+  parsearComps(d['Otras competencias']).forEach(c => addCompWithData('rel', c.nombre, c.nivel));
+}
+
 function precargarPuesto() {
   const input = document.getElementById('f-nombre-nuevo');
   const hint = document.getElementById('f-nombre-nuevo-hint');
@@ -1387,7 +1506,22 @@ function precargarPuesto() {
   // Si es puesto nuevo: ocultar select, mostrar input
   if (val === '__nuevo__') {
     if (sel) { sel.style.display = 'none'; sel.value = ''; }
-    if (input) { input.style.display = 'block'; input.value = ''; input.focus(); }
+    if (input) { 
+      input.style.display = 'block'; input.value = ''; input.focus();
+      // Al salir del campo, buscar si ya existe en Sheets
+      input.onblur = async () => {
+        const nombre = input.value.trim();
+        if (!nombre) return;
+        const sheetsData = await cargarDesdeSheets(nombre, '');
+        if (sheetsData) {
+          clearFormSilent();
+          aplicarDatosSheets(sheetsData);
+          showToast('✓ Encontrado en registros guardados — datos cargados');
+          document.getElementById('preload-notice').classList.add('show');
+          setTimeout(actualizarProgreso, 300);
+        }
+      };
+    }
     if (hint) hint.style.display = 'block';
     return;
   } else {
@@ -1439,7 +1573,15 @@ function precargarPuesto() {
   notice.classList.add('show');
   showToast('Puesto "' + p.nombre + '" precargado ✓');
   setTimeout(actualizarProgreso,300);
-  setTimeout(actualizarProgreso, 300);
+
+  // Intentar cargar versión más reciente desde Sheets (sobreescribe catálogo si existe)
+  cargarDesdeSheets(p.nombre, p.area).then(sheetsData => {
+    if (sheetsData) {
+      aplicarDatosSheets(sheetsData);
+      showToast('✓ Datos actualizados cargados desde el registro guardado');
+      setTimeout(actualizarProgreso, 300);
+    }
+  });
 }
 
 // ── CARDINALES ──
@@ -2489,61 +2631,7 @@ async function enviarAGoogleSheets(rec, pdfBase64) {
 }
 
 // Genera el PDF y retorna el base64 (sin descargar)
-function _generarPDFBase64(r) {
-  try {
-    const {jsPDF} = window.jspdf;
-    const doc = new jsPDF({unit:'mm', format:'a4'});
-    const W=210, M=18, CW=W-M*2; let y=20;
-    const pc=(h=8)=>{if(y+h>275){doc.addPage();y=20;}};
-    const hdr=(txt,col=[83,74,183])=>{pc(10);doc.setFillColor(...col);doc.roundedRect(M,y,CW,8,2,2,'F');doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(255,255,255);doc.text(txt,M+4,y+5.5);y+=12;};
-    const fld=(lbl,val)=>{if(!val)return;pc(12);if(lbl){doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(69,99,255);doc.text(lbl.toUpperCase(),M,y);y+=4;}doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(40,40,40);doc.splitTextToSize(String(val),CW).forEach(l=>{pc(5);doc.text(l,M,y);y+=4.5;});y+=2;};
 
-    doc.setFillColor(17,17,24);doc.rect(0,0,210,14,'F');
-    doc.setFillColor(250,216,63);doc.rect(0,11,210,3,'F');
-    doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(255,255,255);
-    doc.text('Descripción de Puesto — Hostech',M,9.5);
-    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text(r.fecha_guardado||'',W-M,9.5,{align:'right'});y=22;
-
-    hdr('I · Identificación');
-    fld('Puesto',r.nombre);fld('Área',r.area+(r.subarea?' / '+r.subarea:''));
-    fld('Nivel',r.nivel);fld('Reporta a',r.jefe);
-    fld('Jornada',[...(r.jornadas||[])].join(', ')+(r.horas?' · '+r.horas+'h/sem':''));
-    fld('Modalidad',[...(r.modalidades||[])].join(', ')+(r.sede?' · '+r.sede:''));
-    fld('Evaluación',r.eval_desempeno);fld('Elabora',r.autor);fld('Revisa',r.revisor);fld('Aprueba',r.aprobador);
-    hdr('II · Misión y Visión');fld('Misión',r.mision);fld('Visión',r.vision);
-    hdr('III · Objetivo');fld('',r.objetivo);
-    hdr('IV · Escolaridad y Experiencia');
-    fld('Escolaridad',r.escolaridad);fld('Experiencia',expStr(r.experiencia));fld('Idiomas',idiomasStr(r.idiomas));
-    if(r.comp_cardinal&&r.comp_cardinal.length){hdr('V-a · Competencias cardinales');r.comp_cardinal.forEach(c=>{pc(6);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(40,40,40);doc.text('• '+c.nombre,M,y);if(c.nivel){doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(83,74,183);doc.text(c.nivel,W-M,y,{align:'right'});}y+=5;});y+=2;}
-    if(r.comp_tec&&r.comp_tec.length){hdr('V-b · Competencias técnicas');r.comp_tec.forEach(c=>{pc(6);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(40,40,40);doc.text('• '+c.nombre,M,y);if(c.nivel){doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(83,74,183);doc.text(c.nivel,W-M,y,{align:'right'});}y+=5;});y+=2;}
-    if(r.comp_rel&&r.comp_rel.length){hdr('V-c · Otras competencias');r.comp_rel.forEach(c=>{pc(6);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(40,40,40);doc.text('• '+c.nombre,M,y);if(c.nivel){doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(83,74,183);doc.text(c.nivel,W-M,y,{align:'right'});}y+=5;});y+=2;}
-    hdr('VI · Funciones');fld('Funciones clave',r.func_sust);fld('Funciones de apoyo',r.func_apoyo);fld('Funciones eventuales',r.func_event);
-    hdr('VII · Relaciones');
-    const tc=(r.colab_directos||0)+(r.colab_indirectos||0);
-    if(tc>0)fld('Colaboradores',tc+' ('+r.colab_directos+' dir./'+r.colab_indirectos+' indir.)');
-    fld('Supervisa',r.supervisados);fld('Interactúa con',r.rel_int);fld('Reemplazo',r.reemplazo);
-    const hF=r.resp_ventas||r.monto_ventas||r.resp_presupuesto||r.monto_presupuesto||r.manejo_efectivo;
-    if(hF){hdr('VIII · Resp. financiera',[14,110,86]);fld('Ventas',r.resp_ventas);fld('Monto ventas',r.monto_ventas);fld('Presupuesto',r.resp_presupuesto);fld('Monto presupuesto',r.monto_presupuesto);fld('Efectivo',r.manejo_efectivo);}
-    hdr('IX · Condiciones de trabajo');
-    fld('Esfuerzo mental',r.esf_mental);fld('Esfuerzo físico',r.esf_fisico);
-    fld('Ambiente',r.ambiente);fld('Riesgo',r.riesgo);fld('Impacto',r.impacto);
-    fld('Recursos',recursosStr(r.recursos));fld('Info. confidencial',recursosStr(r.confidencial));
-    hdr('X · Perfil');
-    fld('Disponibilidad viajes',r.disponibilidad);fld('Licencia',r.licencia);
-    fld('Automóvil',r.auto_propio);fld('Horario',r.disp_horario);fld('Características',r.caracteristicas);
-
-    const pages=doc.internal.getNumberOfPages();
-    for(let i=1;i<=pages;i++){
-      doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(160,160,160);
-      doc.text('Página '+i+' de '+pages,W/2,290,{align:'center'});
-      doc.text((r.nombre||'')+'  ·  '+(r.area||''),M,290);
-    }
-    return doc.output('datauristring').split(',')[1];
-  } catch(e) {
-    console.warn('Error generando PDF base64:', e);
-    return '';
-  }
-}
 
 // Descarga el PDF en la computadora del líder
 function _descargarPDF(r, base64) {
