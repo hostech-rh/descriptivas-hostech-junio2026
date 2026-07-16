@@ -733,7 +733,7 @@
           <div class="field"><label>Aprobado por</label><input id="f-aprobador"></div>
         </div>
         <div class="fg fg3">
-          <div class="field"><label>Fecha</label><input id="f-fecha" type="date"></div>
+          <div class="field"><label>Fecha</label><input id="f-fecha" type="date" readonly style="background:#f0f0f6;color:var(--gris);cursor:default"></div>
           <div class="field"><label>Evaluación de desempeño</label>
             <select id="f-eval-desempeno"><option value="">Frecuencia…</option><option>No aplica</option><option>Pendiente de definir</option><option>Mensual</option><option>Bimestral</option><option>Trimestral</option><option>Semestral</option><option>Anual</option></select>
           </div>
@@ -1370,6 +1370,7 @@ function precargarPuesto() {
   setChk('f-mp','chk-mod-presencial',   p.modalidades?.includes('Presencial'));
   setChk('f-mh','chk-mod-hibrido',      p.modalidades?.includes('Híbrido'));
   setChk('f-mr','chk-mod-remoto',       p.modalidades?.includes('Remoto'));
+  sv('f-fecha', new Date().toISOString().split('T')[0]); // siempre fecha de hoy
   sv('f-mision', p.mision); sv('f-vision', p.vision); sv('f-objetivo', p.objetivo);
   ss('f-escolaridad', p.escolaridad);
   const expBody = document.getElementById('exp-body');
@@ -1710,7 +1711,7 @@ function collectFormData() {
     area: g('f-area'), autor: g('f-autor'),
     subarea: g('f-subarea'), nivel: g('f-nivel'), clave: g('f-clave'),
     revisor: g('f-revisor'), aprobador: g('f-aprobador'),
-    fecha: g('f-fecha'), eval_desempeno: g('f-eval-desempeno'), horas: g('f-horas'),
+    fecha: new Date().toLocaleDateString('es-MX'), eval_desempeno: g('f-eval-desempeno'), horas: g('f-horas'),
     jornadas: jornadasArr, modalidades: modalidadesArr, sede: g('f-sede'),
     mision: g('f-mision'), vision: g('f-vision'), objetivo: g('f-objetivo'),
     escolaridad: g('f-escolaridad'), experiencia: getExp(),
@@ -1974,7 +1975,7 @@ async function enviarPorEmailJS(rec, pdfBase64) {
     area:          rec.area,
     nivel:         rec.nivel || '—',
     elaborado_por: rec.autor,
-    fecha:         rec.fecha || rec.fecha_guardado,
+    fecha:         new Date().toLocaleDateString('es-MX'),
     message:       `Nueva descriptiva de puesto: ${rec.nombre} — ${rec.area}`,
   };
   try {
@@ -2008,7 +2009,7 @@ const CAMPOS_OBL = {
   'sec-IV':  [{id:'f-escolaridad',label:'Escolaridad requerida'}],
   'sec-V':   [{custom:'cardinales',label:'Nivel en las 5 competencias cardinales'}],
   'sec-VI':  [{id:'f-func-sust',label:'Funciones clave del puesto'}],
-  'sec-VII': [{id:'f-colab-directos',label:'Colaboradores directos'},{id:'f-colab-indirectos',label:'Colaboradores indirectos'}],
+  'sec-VII': [{custom:'colab_num',id:'f-colab-directos',label:'Colaboradores directos'},{custom:'colab_num',id:'f-colab-indirectos',label:'Colaboradores indirectos'}],
   'sec-IX':  [{id:'f-esf-mental',label:'Esfuerzo mental'},{id:'f-ambiente',label:'Ambiente físico'},{id:'f-riesgo',label:'Riesgo laboral'},{id:'f-impacto',label:'Impacto de errores'}],
 };
 
@@ -2061,6 +2062,12 @@ function validarCampoObl(c) {
   if(c.custom==='cardinales') {
     const sel=document.querySelectorAll('#comp-cardinal-body .nv.sel').length;
     return sel>=5;
+  }
+  if(c.custom==='colab_num') {
+    const el=document.getElementById(c.id);
+    if(!el) return false;
+    const val=el.value.trim();
+    return val!=='' && !isNaN(Number(val)); // 0 es válido
   }
   const el=document.getElementById(c.id);
   if(!el) return false;
