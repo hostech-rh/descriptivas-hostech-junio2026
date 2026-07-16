@@ -621,8 +621,6 @@
 
 <div class="tabs-bar">
   <button class="tab-btn active" onclick="switchTab('form')">Nueva descriptiva</button>
-  <button class="tab-btn" onclick="switchTab('db')">Base de datos</button>
-  <button class="tab-btn rh-tab" onclick="switchTab('rh')">Admin RH</button>
 </div>
 
 <div class="main">
@@ -1096,182 +1094,12 @@
   <!-- ═══════════════════════════════
        TAB: BASE DE DATOS
   ═══════════════════════════════ -->
-  <div id="view-db" class="view">
-    <div class="stats-row" id="stats-panel"></div>
-    <div class="filter-row">
-      <input class="search-input" id="search-input" placeholder="Buscar por puesto, área o autor…" oninput="renderDB()">
-      <select id="filter-nivel" onchange="renderDB()">
-        <option value="">Todos los niveles</option>
-        <option>Directivo</option><option>Alta Gerencia</option><option>Gerencial</option><option>Jefatura</option><option>Coordinación</option><option>Especialista</option><option>Analista</option><option>Ejecutivo</option><option>Agente</option>
-      </select>
-    </div>
-    <div id="db-list"></div>
-  </div>
+  
 
   <!-- ═══════════════════════════════
        TAB: ADMIN RH
   ═══════════════════════════════ -->
-  <div id="view-rh" class="view">
-    <div class="pin-box">
-      <h3>🔐 Acceso RH</h3>
-      <p>Módulo exclusivo para Recursos Humanos. Ingresa el PIN para administrar el catálogo.</p>
-      <div id="rh-lock">
-        <div class="pin-input-row">
-          <input type="password" id="pin-input" placeholder="• • • •" maxlength="6" onkeydown="if(event.key==='Enter')verifyPin()">
-          <button class="btn btn-verde" onclick="verifyPin()">Entrar</button>
-        </div>
-        <div class="pin-error" id="pin-error">PIN incorrecto. Intenta de nuevo.</div>
-      </div>
-      <div id="rh-session" style="display:none">
-        <p style="color:rgba(255,255,255,.6);font-size:13px">Sesión activa como RH <button class="btn btn-sm btn-ghost" onclick="lockRH()" style="color:rgba(255,255,255,.5);margin-left:8px">Cerrar sesión</button></p>
-      </div>
-    </div>
-
-    <div id="rh-content" style="display:none">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
-        <div style="font-size:16px;font-weight:600;color:var(--negro)">Catálogo de puestos tipo</div>
-        <button class="btn btn-verde" onclick="showCatalogoForm()">+ Nuevo puesto tipo</button>
-      </div>
-      <div id="catalogo-list"></div>
-
-      <div id="catalogo-form" style="display:none;margin-top:1.5rem">
-        <div class="sec-hdr"><div class="sec-hdr-num" style="background:var(--verde);color:#fff">✎</div><div class="sec-hdr-text" style="color:var(--verde)">Definir puesto tipo</div><div class="sec-hdr-line"></div></div>
-        <div class="card">
-          <div class="fg fg3">
-            <div class="field"><label>Nombre del puesto <span class="req">*</span></label><input id="ct-nombre" placeholder="Ej. Gerente de RH"></div>
-            <div class="field"><label>Área</label><select id="ct-area">
-      <option value="">Seleccionar…</option>
-      <option>Administración</option>
-      <option>Comercial</option>
-      <option>Contabilidad</option>
-      <option>Dirección</option>
-      <option>Grupos y Bodas</option>
-      <option>Marketing</option>
-      <option>Operaciones</option>
-      <option>Producto</option>
-      <option>Recursos Humanos</option>
-      <option>Transformación</option>
-    </select></div>
-            <div class="field"><label>Nivel</label><select id="ct-nivel">
-<option value="">…</option>
-<option>Directivo</option>
-<option>Alta Gerencia</option>
-<option>Gerencial</option>
-<option>Jefatura</option>
-<option>Coordinación</option>
-<option>Especialista</option>
-<option>Analista</option>
-<option>Ejecutivo</option>
-<option>Agente</option>
-</select></div>
-          </div>
-          <div class="fg fg3">
-            <div class="field"><label>Reporta a</label><input id="ct-jefe"></div>
-            <div class="field"><label>Clave</label><input id="ct-clave"></div>
-            <div class="field"><label>Horas/semana</label><select id="ct-horas">
-              <option value="">Seleccionar…</option>
-              <option>20</option>
-              <option>30</option>
-              <option>40</option>
-              <option>44</option>
-              <option>48</option>
-            </select></div>
-          </div>
-          <div class="fg fg2">
-            <div class="field"><label>Evaluación de desempeño</label><select id="ct-eval"><option value="">…</option><option>No aplica</option><option>Pendiente de definir</option><option>Mensual</option><option>Bimestral</option><option>Trimestral</option><option>Semestral</option><option>Anual</option></select></div>
-            <div class="field"><label>Escolaridad mínima</label>
-            <select id="ct-escolaridad">
-              <option value="">Seleccionar…</option>
-              <option>Secundaria</option>
-              <option>Bachillerato / Preparatoria</option>
-              <option>Técnico superior universitario</option>
-              <option>Licenciatura</option>
-              <option>Especialidad</option>
-              <option>Maestría</option>
-              <option>Doctorado</option>
-            </select>
-          </div>
-          </div>
-          <div class="card-label" style="margin-top:4px">Jornada y modalidad</div>
-          <div class="chk-grid">
-            <label class="chk-item"><input type="checkbox" id="ct-jc"> Completa</label>
-            <label class="chk-item"><input type="checkbox" id="ct-jm"> Mixta</label>
-            <label class="chk-item"><input type="checkbox" id="ct-jmed"> Media</label>
-            <label class="chk-item"><input type="checkbox" id="ct-mp"> Presencial</label>
-            <label class="chk-item"><input type="checkbox" id="ct-mh"> Híbrido</label>
-            <label class="chk-item"><input type="checkbox" id="ct-mr"> Remoto</label>
-          </div>
-        </div>
-        <div class="card">
-          <div class="fg fg2">
-            <div class="field"><label>Misión</label><textarea id="ct-mision" style="min-height:60px"></textarea></div>
-            <div class="field"><label>Visión</label><textarea id="ct-vision" style="min-height:60px"></textarea></div>
-          </div>
-          <div class="field"><label>Objetivo</label><textarea id="ct-objetivo" style="min-height:60px"></textarea></div>
-          <div class="fg fg2" style="margin-top:12px">
-            <div class="field" style="grid-column:1/-1">
-              <label>Experiencia requerida</label>
-              <table style="width:100%;border-collapse:collapse;font-size:13px">
-                <thead>
-                  <tr>
-                    <th style="width:36%;padding:6px 8px;background:var(--negro);color:var(--amarillo);font-size:11px;font-weight:600;text-align:left;border-radius:6px 0 0 0">Años de experiencia</th>
-                    <th style="padding:6px 8px;background:var(--negro);color:var(--amarillo);font-size:11px;font-weight:600;text-align:left;border-radius:0 6px 0 0">Área o tipo de experiencia</th>
-                    <th style="width:40px;background:var(--negro)"></th>
-                  </tr>
-                </thead>
-                <tbody id="ct-exp-body"></tbody>
-              </table>
-              <button class="btn btn-sm" onclick="addCtExp()" style="margin-top:8px">+ Agregar experiencia</button>
-            </div>
-            <div class="field"><label>Funciones clave del puesto</label><textarea id="ct-func-sust" style="min-height:60px"></textarea></div>
-          </div>
-          <div class="fg fg2"> <div class="field"><label>Reemplazo en ausencia</label><input id="ct-reemplazo"></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-label">Competencias cardinales — nivel estándar <span class="pill" style="background:var(--negro);color:var(--amarillo)">Por puesto tipo</span></div>
-          <div class="comp-wrap">
-            <table class="comp-table"><thead><tr><th>Competencia</th><th>Nivel</th></tr></thead>
-            <tbody id="ct-cardinal-body"></tbody></table>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-label">Competencias técnicas tipo</div>
-          <div class="comp-wrap"><table class="comp-table"><thead><tr><th>Competencia</th><th>Nivel</th><th style="width:40px"></th></tr></thead><tbody id="ct-tec-body"></tbody></table></div>
-          <div class="add-row"><input id="ct-new-tec" placeholder="Agregar…"><button class="btn btn-sm" onclick="addCtComp('tec')">+</button></div>
-        </div>
-        <div class="card">
-          <div class="card-label">Competencias relacionales tipo</div>
-          <div class="comp-wrap"><table class="comp-table"><thead><tr><th>Competencia</th><th>Nivel</th><th style="width:40px"></th></tr></thead><tbody id="ct-rel-body"></tbody></table></div>
-          <div class="add-row"><input id="ct-new-rel" placeholder="Agregar…"><button class="btn btn-sm" onclick="addCtComp('rel')">+</button></div>
-        </div>
-        <div class="card">
-          <div class="fg fg2">
-            <div class="field"><label>Esfuerzo mental</label><select id="ct-esf-mental"><option value="">…</option><option>Bajo — tareas rutinarias</option><option>Medio — análisis ocasional</option><option>Alto — decisiones complejas</option><option>Muy alto — decisiones estratégicas</option></select></div>
-            <div class="field"><label>Esfuerzo físico</label><select id="ct-esf-fisico"><option value="">…</option><option>Mínimo — sedentario</option><option>Leve</option><option>Moderado</option><option>Alto</option></select></div>
-          </div>
-          <div class="fg fg2">
-            <div class="field"><label>Ambiente físico</label><select id="ct-ambiente"><option value="">…</option><option>Oficina climatizada</option><option>Oficina con exposición leve</option><option>Exteriores — visitas a clientes / exposición al clima</option><option>Planta / campo</option><option>Condiciones adversas</option></select></div>
-            <div class="field"><label>Riesgo laboral</label><select id="ct-riesgo"><option value="">…</option><option>Bajo</option><option>Medio</option><option>Alto</option><option>Muy alto</option></select></div>
-          </div>
-          <div class="fg fg3">
-            <div class="field"><label>Impacto de errores</label><select id="ct-impacto"><option value="">…</option><option>Mínimo</option><option>Local</option><option>Departamental</option><option>Organizacional</option></select></div>
-            <div class="field"><label>Disponibilidad para viajar</label><select id="ct-disponibilidad"><option value="">…</option><option>No requiere viajes</option><option>Viajes esporádicos (menos del 10%)</option><option>Viajes frecuentes (10–40%)</option><option>Alta movilidad (más del 40%)</option></select></div>
-          </div>
-          <div class="fg fg3">
-            <div class="field"><label>Licencia de conducir</label><select id="ct-licencia"><option value="">No requerida</option><option>Sí — tipo A (motocicleta)</option><option>Sí — tipo B (automóvil)</option><option>Sí — tipo C (camión / carga)</option><option>Sí — cualquier tipo</option></select></div>
-            <div class="field"><label>Automóvil propio</label><select id="ct-auto"><option value="">No requerido</option><option>Deseable</option><option>Indispensable</option></select></div>
-            <div class="field"><label>Disponibilidad de horario</label><select id="ct-disp-horario"><option value="">No aplica</option><option>Horario fijo</option><option>Horario flexible</option><option>Disponibilidad en fines de semana</option><option>Disponibilidad nocturna</option><option>Guardias / rotación de turnos</option></select></div>
-          </div>
-        </div>
-        <input type="hidden" id="ct-editing-id">
-        <div class="actions">
-          <button class="btn" onclick="hideCatalogoForm()">Cancelar</button>
-          <button class="btn btn-verde" onclick="savePuestoTipo()">Guardar en catálogo</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  
 
 </div><!-- /main -->
 
